@@ -72,7 +72,31 @@ int read_header(FILE *fp, BITMAPFILEHEADER *file_header){
     printf("%u\n", file_header->bfReserved1);
     printf("%u\n", file_header->bfReserved2);
     printf("%u\n", file_header->bfOffBits);
+}
 
+
+int read_body(FILE *fp, BITMAPINFOHEADER *file_body){
+    
+    int num;
+    num = fread(file_body, sizeof(BITMAPINFOHEADER), 1, fp);
+
+    if(num != 1){
+        perror("FILE read failed\n");
+        return 1;
+    }
+
+    printf("This is the BMP body\n");
+    printf("%u\n", file_body->biSize);
+    printf("%u\n", file_body->biWidth);
+    printf("%u\n", file_body->biHeight);
+    printf("%u\n", file_body->biPlanes);
+    printf("%u\n", file_body->biCompression);
+    printf("%u\n", file_body->biSizeImage);
+    printf("%u\n", file_body->biXPelsPerMeter);
+    printf("%u\n", file_body->biYPelsPerMeter);
+    printf("%u\n", file_body->biClrUsed);
+    printf("%u\n", file_body->biClrImportant);
+    
     return 0;
 }
 
@@ -104,20 +128,19 @@ int main(int argc, char **argv[]){
     }
 
     // 해더파일데이터를 저장하기 위한 구조체 선언하기
-    BITMAPFILEHEADER file_header;
-   
-    // -h 명령어 실행시
+    BITMAPFILEHEADER file_header; 
+    BITMAPINFOHEADER file_body;
+
+    // -h 명령어
     // 올바르게 파일 이름을 입력했다면 0을 반환한다. 
     if(strcmp((const char *)argv[1], "-h") == 0){
-     int result = read_header(fp, &file_header); 
+       read_header(fp, &file_header); 
     }
-
-
    
     // -o 명령어 시행시
-//    else if(strcmp(argv[1], '-o') == 0){
-        
-//    }
+    else if(strcmp((const char *)argv[1], "-o") == 0){
+        read_body(fp, &file_body);
+    }
 
 
     // -e 명령어 시행시
