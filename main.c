@@ -47,75 +47,73 @@ typedef struct __attribute__((packed)) {
     uint8_t red;
 } PIXEL;
 
-
+//int read_body(){
+  
+//    return 0;
+//}
 
 
 // BMP 파일의 해더 내용을 출력 하기 위한 함수
-int read_header(*fp){
-    
-    int result;
+int read_header(FILE *fp, BITMAPFILEHEADER *file_header){
+
     int num;
 
-    BITMAPFILEHEADER header;
-    num = fread(&header, sizeof(BITMAPFILEHEADER), 1, fp);
+    // BITMAPFILEHEADER header;
+    num = fread(file_header, sizeof(BITMAPFILEHEADER), 1, fp);
 
     if(num != 1){
         perror("FILE read failed\n");
-        return -1;
+        return 1;
     }
 
-    
-}
+    printf("This is the BMP header\n");
+    printf("%c\n", file_header->bfType);
+    printf("%u\n", file_header->bfSize);
+    printf("%u\n", file_header->bfReserved1);
+    printf("%u\n", file_header->bfReserved2);
+    printf("%u\n", file_header->bfOffBits);
 
+    return 0;
+}
 
 // BMP 파일을 읽어서 바디 내용을 16진수 값으로
 // outfile에텍스트로 출력하기 위한
 // 한 줄에 8바이트씩 출력하고
 // 각 줄 앞에는 시작 바이트의 상대 주소르 16진수로 표현한다. 
-int read_body(){
-}
+int main(int argc, char **argv[]){
 
-
-
-
-int main(int argc, **char argv[]){
-
+    // 파일 포인터
     FILE *fp;
-    const char *filename = argv[2];
 
+    // 명령어에서 받는 파일 이름
+    const char *filename =(const char *)argv[2];
 
-    // 바이너리를 읽기 위한
+        // 바이너리도 읽을 수 있도록
     fp = fopen(filename, "rb");
-    
-    // argc
+
+    // 커맨드가 너무 짧다면
     if(argc < 3){
-        perror("Command too short\n");
-        return -1;
-    } 
-    
+        perror("Command too shordt\n");
+        return 1;
+    }
 
-    // -h 명령어 시행시
-    else if(strcmp(filename, '-h') == 0){
+    // 파일 잘 못읽어오면
+    if(fp == NULL){
+        perror("Failed to read file\n");
+        return 1;   
+    }
 
-       // 파일 헤더 함수 호출
-       // 만약에 호출 실패시
-       if(read_header(fp) == 1){
-           perror("-h read header failed\n");
-           return -1;
-       }
-    
-       if(read_body(&filename) == 1){
-           perror("-h read body failed\n");
-           return -1
-       }
-
+    // 해더파일데이터를 저장하기 위한 구조체 선언하기
+    BITMAPFILEHEADER file_header;
+   
+    // -h 명령어 실행시
+    // 올바르게 파일 이름을 입력했다면 0을 반환한다. 
+    if(strcmp((const char *)argv[1], "-h") == 0){
+     int result = read_header(fp, &file_header); 
     }
 
 
-    
-       
-
-
+   
     // -o 명령어 시행시
 //    else if(strcmp(argv[1], '-o') == 0){
         
@@ -138,5 +136,7 @@ int main(int argc, **char argv[]){
 //        return -1
 //    }
 
+
+    fclose(fp);
     return 0;
 }
