@@ -45,21 +45,20 @@ typedef struct __attribute__((packed)) {
 // 3. 픽셀 구조체 (PIXEL, 3 bytes)
 // -----------------------------------------------------------
 
-// 픽셀 데이터는 BGR 순서로 저장됩니다.
+// 픽셀 데이터는 BGR 순서로 저장된다. 
+// 그레이스케일로 변환한다는 것은 픽셀의 RGB 값을 단일로 바꾼다는 것이다. 
 typedef struct __attribute__((packed)) {
     uint8_t blue;
     uint8_t green;
     uint8_t red;
 } PIXEL;
 
-//int read_body(){
-  
-//    return 0;
-//}
-
-
 // BMP 파일의 해더 내용을 출력 하기 위한 함수
 int read_header(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_info_header){
+    
+    printf("=======================================\n");
+    printf("               BMP FILE HEAD\n");
+    printf("=======================================\n");
 
     int num;
 
@@ -107,7 +106,6 @@ int read_body(FILE *fp, BITMAPFILEHEADER *file_header){
     unsigned char buff[8];
     int distance;
     int count = 0;
-    int count2 = 0;
     uint8_t read_data;
 
     // bfOffBits은 파일해더 전체크기와 동일한 의미를 갖는다
@@ -139,14 +137,6 @@ int read_body(FILE *fp, BITMAPFILEHEADER *file_header){
         printf("%08x ", count);
         count = count + 8;
 
-/*
-        if(count2 == 5){
-            printf("\n");
-            count2 = 0;
-        }
-
-        */
-
         // 16진수로 출력해야한다. 
         for(int i = 0; i < 8; i++){ 
             printf("%02x ", buff[i]);
@@ -155,6 +145,57 @@ int read_body(FILE *fp, BITMAPFILEHEADER *file_header){
         printf("\n");
     }
 
+    return 0;
+}
+
+
+// output BMP file을 만들어야 한다. 
+// 거기에 전체 픽셀값을 변형시켜서
+// 그레이스케일로 넣어야 한다. 
+// 일단은 그레이스케일로 넣어야 한다.
+int gray_scale(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_info_header, const char *filename){
+
+    // 명령어 실행을 알아 볼 수 있도록
+    printf("=======================================\n");
+    printf("               GRAY SCALE\n");
+    printf("=======================================\n");
+
+    FILE *gray_fp;
+    int num = 0;
+
+    // 원본 파일의 해더와 관련된 것들을 모두 같은 형식으로 붙여 쓰기한다. 
+    // 일단 파일을 하나 만들어야 한다. 
+    const char *gray_filename = filename;
+
+    // 새로운 파일을 하나 만들어야 한다. 
+    // 바이너리 데이터를 써야한다. 
+    gray_fp = fopen(gray_filename, "wb");
+    
+    // 오류처리
+    if(gray_fp == NULL){
+        perror("File open failed\n");
+        return 1;
+    }
+    
+    // BITMAPFILEHEADER에서 정해진 구조체 방식으로 새로운 파일에 넣는다
+    // fread를 사용하여서 넣는다.
+    // fwrite를 통하여서 써 넣는다. 
+    num = num + fread(file_header, sizeof(BITMAPFILEHEADER), 1, fp);
+    num = num + fwrite(file_header, sizeof(BITMAPINFOHEADER), 1, gray_fp);
+    
+    num = num + fread(file_info_header, sizeof(BITMAPFILEHEADER), 1, fp);
+    num = num + fwrite(file_info_header, sizeof(BITMAPINFOHEADER), 1, gray_fp);
+
+    // 에러처리
+    if(num != 4){
+        perror("FILE read and write FAILED\n");
+        return 1;
+    }
+
+    // 다 복사했으면 다음에는 픽셀 데이터들을 읽어 와야한다. 
+    //  
+
+    fclose(gray_fp);
     return 0;
 }
 
@@ -199,13 +240,11 @@ int main(int argc, char *argv[]){
     else if(strcmp((const char *)argv[1], "-o") == 0){
        read_body(fp, &file_header);
     }
-
-
-    // -e 명령어 시행시
-//    else if(strcmp(argv[1], '-e') == 0){
-
-//    }
     
+    else if(strcmp(argv[1], "-g") == 0){
+        gray_scale(fp, &file_header, &file_info_header, argv[3]);
+    }
+   
     // -d 명령어 시행시
 //    else if(strcmp(argv[1], '-d') == 0){
 
@@ -213,7 +252,7 @@ int main(int argc, char *argv[]){
 
 //    else {
 
-//        perror("Wrong Cammand\n");
+//        perror("Wrong Cammand\n);
 //        return -1
 //    }
 
