@@ -163,6 +163,10 @@ int gray_scale(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_i
     FILE *gray_fp;
     int num = 0;
 
+    unsigned char buff[3];
+    int distance;
+    uint8_t read_data;
+
     // 원본 파일의 해더와 관련된 것들을 모두 같은 형식으로 붙여 쓰기한다. 
     // 일단 파일을 하나 만들어야 한다. 
     const char *gray_filename = filename;
@@ -181,9 +185,9 @@ int gray_scale(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_i
     // fread를 사용하여서 넣는다.
     // fwrite를 통하여서 써 넣는다. 
     num = num + fread(file_header, sizeof(BITMAPFILEHEADER), 1, fp);
-    num = num + fwrite(file_header, sizeof(BITMAPINFOHEADER), 1, gray_fp);
+    num = num + fwrite(file_header, sizeof(BITMAPFILEHEADER), 1, gray_fp);
     
-    num = num + fread(file_info_header, sizeof(BITMAPFILEHEADER), 1, fp);
+    num = num + fread(file_info_header, sizeof(BITMAPINFOHEADER), 1, fp);
     num = num + fwrite(file_info_header, sizeof(BITMAPINFOHEADER), 1, gray_fp);
 
     // 에러처리
@@ -193,8 +197,26 @@ int gray_scale(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_i
     }
 
     // 다 복사했으면 다음에는 픽셀 데이터들을 읽어 와야한다. 
-    //  
+    // fseek를 통해서 픽셀 데이터가 시작되는 포인터로 방향을 바꾼다. 
+    // 반복문을 통하여서 데이터를 붙어 넣어야 한다. 
+    // 전체 픽셀 수를 기반으로 하는 반복문을 작성한다. 
+    // 그리고 그부분부터 데이터를 계속해서 붙여 넣어야 한다. 
+  
+    uint32_t size = file_header -> bfOffBits;
+    distance = sizeof(size);
+    fseek(fp, distance, SEEK_SET);
+    fseek(gray_fp, distance, SEEK_SET);
 
+    // 바디 데이터의 수를 알아야한다. 
+    long pixnum = file_info_header->biWidth * file_info_header->biHeight;
+
+    // 픽셀데이터를 읽고 변환하고 쓰는 과정을
+    // 반복해 나간다. 
+    for(long i = 0; i < pix_num; i++){
+        fread(buff[3], 3, 1, fp);  
+        fwrite(buff[3], 3, 1, gray_fp);
+    }
+    
     fclose(gray_fp);
     return 0;
 }
