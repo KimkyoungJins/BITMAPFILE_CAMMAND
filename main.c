@@ -54,7 +54,7 @@ typedef struct __attribute__((packed)) {
 
 
 // BMP 파일의 해더 내용을 출력 하기 위한 함수
-int read_header(FILE *fp, BITMAPFILEHEADER *file_header){
+int read_header(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_info_header){
 
     int num;
 
@@ -72,39 +72,33 @@ int read_header(FILE *fp, BITMAPFILEHEADER *file_header){
     printf("%u\n", file_header->bfReserved1);
     printf("%u\n", file_header->bfReserved2);
     printf("%u\n", file_header->bfOffBits);
-}
 
-
-int read_body(FILE *fp, BITMAPINFOHEADER *file_body){
-    
-    int num;
-    num = fread(file_body, sizeof(BITMAPINFOHEADER), 1, fp);
+    num = fread(file_info_header, sizeof(BITMAPINFOHEADER), 1, fp);
 
     if(num != 1){
         perror("FILE read failed\n");
         return 1;
     }
+    printf("%u\n", file_info_header->biSize);
+    printf("%u\n", file_info_header->biWidth);
+    printf("%u\n", file_info_header->biHeight);
+    printf("%u\n", file_info_header->biPlanes);
+    printf("%u\n", file_info_header->biCompression);
+    printf("%u\n", file_info_header->biSizeImage);
+    printf("%u\n", file_info_header->biXPelsPerMeter);
+    printf("%u\n", file_info_header->biYPelsPerMeter);
+    printf("%u\n", file_info_header->biClrUsed);
+    printf("%u\n", file_info_header->biClrImportant);
 
-    printf("This is the BMP body\n");
-    printf("%u\n", file_body->biSize);
-    printf("%u\n", file_body->biWidth);
-    printf("%u\n", file_body->biHeight);
-    printf("%u\n", file_body->biPlanes);
-    printf("%u\n", file_body->biCompression);
-    printf("%u\n", file_body->biSizeImage);
-    printf("%u\n", file_body->biXPelsPerMeter);
-    printf("%u\n", file_body->biYPelsPerMeter);
-    printf("%u\n", file_body->biClrUsed);
-    printf("%u\n", file_body->biClrImportant);
-    
-    return 0;
+    return 0; 
 }
+
 
 // BMP 파일을 읽어서 바디 내용을 16진수 값으로
 // outfile에텍스트로 출력하기 위한
 // 한 줄에 8바이트씩 출력하고
 // 각 줄 앞에는 시작 바이트의 상대 주소르 16진수로 표현한다. 
-int main(int argc, char **argv[]){
+int main(int argc, char *argv[]){
 
     // 파일 포인터
     FILE *fp;
@@ -129,18 +123,18 @@ int main(int argc, char **argv[]){
 
     // 해더파일데이터를 저장하기 위한 구조체 선언하기
     BITMAPFILEHEADER file_header; 
-    BITMAPINFOHEADER file_body;
+    BITMAPINFOHEADER file_info_header;
 
     // -h 명령어
     // 올바르게 파일 이름을 입력했다면 0을 반환한다. 
     if(strcmp((const char *)argv[1], "-h") == 0){
-       read_header(fp, &file_header); 
+       read_header(fp, &file_header, &file_info_header); 
     }
    
     // -o 명령어 시행시
-    else if(strcmp((const char *)argv[1], "-o") == 0){
-        read_body(fp, &file_body);
-    }
+   // else if(strcmp((const char *)argv[1], "-o") == 0){
+  //      read_body(fp, &file_info_header);
+//    }
 
 
     // -e 명령어 시행시
