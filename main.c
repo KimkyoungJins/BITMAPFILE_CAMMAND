@@ -93,6 +93,46 @@ int read_header(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_
     return 0; 
 }
 
+int read_body(FILE *fp, BITMAPFILEHEADER file_header){
+
+    int distance;
+    long file_size;
+    size_t data;
+    int count = 0;
+
+    // bfOffBits은 파일해더 전체크기와 동일한 의미를 갖는다
+    // 따라서 그 만큼 컨너뛰면 다음부터는 파일의 바디가 나온다. 
+    distance = sizeof(file_header->bfOffBits);
+
+    // 바디를 출력하기 위해서
+    // 파일 포인터를 바디 부분의 시작으로 옮긴다. 
+    if((fseek(fp, distance, SEET_SET)) == 1){ 
+        perror("Failed to movele pointer\n");
+        fclose(fp);
+        return 1;
+    }
+
+    while(true){
+    
+        // 한번 읽어 오는 크기가 8바이트
+        fread(data, 8 , 1, fp);
+
+        //16진수 형태로 주소 출력 필요
+        printf("%08x\n", count);
+        count = count + 8;
+
+        fprintf(fp, "", );
+       
+        // 8바이트 읽었으니 지금 위치에서 8바이트 만큼 이동한다. 
+        fseek(fp, 8, SEEK_CUR);
+
+        // 파일 포인터의 끝에 다다르면
+        if(fp == EOF)
+            break;
+    }
+
+    return 0;
+}
 
 // BMP 파일을 읽어서 바디 내용을 16진수 값으로
 // outfile에텍스트로 출력하기 위한
