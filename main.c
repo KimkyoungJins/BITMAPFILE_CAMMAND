@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+
+#pragma pack(push, 1)
 
 /*
   Kim Kyung Jin 21900066
@@ -36,6 +39,8 @@ typedef struct __attribute__((packed)) {
     uint32_t biClrImportant;  // 4 bytes
 } BITMAPINFOHEADER;
 
+#pragma pack(pop)
+
 // -----------------------------------------------------------
 // 3. 픽셀 구조체 (PIXEL, 3 bytes)
 // -----------------------------------------------------------
@@ -67,10 +72,10 @@ int read_header(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_
     }
 
     printf("This is the BMP header\n");
-    printf("%c\n", file_header->bfType);
+    printf("%hu\n", file_header->bfType);
     printf("%u\n", file_header->bfSize);
-    printf("%u\n", file_header->bfReserved1);
-    printf("%u\n", file_header->bfReserved2);
+    printf("%hu\n", file_header->bfReserved1);
+    printf("%hu\n", file_header->bfReserved2);
     printf("%u\n", file_header->bfOffBits);
 
     num = fread(file_info_header, sizeof(BITMAPINFOHEADER), 1, fp);
@@ -83,7 +88,8 @@ int read_header(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_
     printf("%u\n", file_info_header->biWidth);
     printf("%u\n", file_info_header->biHeight);
     printf("%u\n", file_info_header->biPlanes);
-    printf("%u\n", file_info_header->biCompression);
+    printf("%hu\n", file_info_header->biBitCount);
+    printf("%hu\n", file_info_header->biCompression);
     printf("%u\n", file_info_header->biSizeImage);
     printf("%u\n", file_info_header->biXPelsPerMeter);
     printf("%u\n", file_info_header->biYPelsPerMeter);
@@ -93,42 +99,60 @@ int read_header(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_
     return 0; 
 }
 
-int read_body(FILE *fp, BITMAPFILEHEADER file_header){
+int read_body(FILE *fp, BITMAPFILEHEADER *file_header){
 
+    printf("=======================================\n");
+    printf("               BMP FILE BODY\n");
+    printf("=======================================\n");
+    unsigned char buff[8];
     int distance;
-    long file_size;
-    size_t data;
     int count = 0;
+    int count2 = 0;
+    uint8_t read_data;
 
     // bfOffBits은 파일해더 전체크기와 동일한 의미를 갖는다
     // 따라서 그 만큼 컨너뛰면 다음부터는 파일의 바디가 나온다. 
-    distance = sizeof(file_header->bfOffBits);
+
+    uint32_t size = file_header->bfOffBits;
+    distance = sizeof(size);
 
     // 바디를 출력하기 위해서
     // 파일 포인터를 바디 부분의 시작으로 옮긴다. 
-    if((fseek(fp, distance, SEET_SET)) == 1){ 
+    if((fseek(fp, distance, SEEK_SET)) == 1){ 
         perror("Failed to movele pointer\n");
         fclose(fp);
         return 1;
     }
 
-    while(true){
+
+    while(1){
     
         // 한번 읽어 오는 크기가 8바이트
-        fread(data, 8 , 1, fp);
+        read_data = fread(buff, 8 , 1, fp);
+
+        if(read_data == 0){
+            break;
+        }
 
         //16진수 형태로 주소 출력 필요
-        printf("%08x\n", count);
+        
+        printf("%08x ", count);
         count = count + 8;
 
-        fprintf(fp, "", );
-       
-        // 8바이트 읽었으니 지금 위치에서 8바이트 만큼 이동한다. 
-        fseek(fp, 8, SEEK_CUR);
+/*
+        if(count2 == 5){
+            printf("\n");
+            count2 = 0;
+        }
 
-        // 파일 포인터의 끝에 다다르면
-        if(fp == EOF)
-            break;
+        */
+
+        // 16진수로 출력해야한다. 
+        for(int i = 0; i < 8; i++){ 
+            printf("%02x ", buff[i]);
+        }
+        
+        printf("\n");
     }
 
     return 0;
@@ -172,9 +196,9 @@ int main(int argc, char *argv[]){
     }
    
     // -o 명령어 시행시
-   // else if(strcmp((const char *)argv[1], "-o") == 0){
-  //      read_body(fp, &file_info_header);
-//    }
+    else if(strcmp((const char *)argv[1], "-o") == 0){
+       read_body(fp, &file_header);
+    }
 
 
     // -e 명령어 시행시
