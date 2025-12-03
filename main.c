@@ -163,9 +163,20 @@ int gray_scale(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_i
     FILE *gray_fp;
     int num = 0;
 
-    unsigned char buff[3];
+    // 메모리에 넣을 데이터 형식이 필요하다. 
+    // 픽셀에 관한 데이터는 정해져 있지 않다.
+    // 따라서 동적 메모리 할당이 중요하다. 
+    size_t bit_size = file_info_header->biSizeImage;
+    unsigned char pix_buff[3];
+    unsigned char zero_byte = 0; // 패딩용 바이트
+    int pixels_per_row = file_info_header->biWidth; // 한 줄의 픽셀 수
+
     int distance;
-    uint8_t read_data;
+    const int bytes_per_pixel = 3;
+
+    long row_size = file_info_header->biWidth * bytes_per_pixel;
+
+    int padding = (4 - (row_size % 4)) % 4;
 
     // 원본 파일의 해더와 관련된 것들을 모두 같은 형식으로 붙여 쓰기한다. 
     // 일단 파일을 하나 만들어야 한다. 
@@ -202,8 +213,10 @@ int gray_scale(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_i
     // 전체 픽셀 수를 기반으로 하는 반복문을 작성한다. 
     // 그리고 그부분부터 데이터를 계속해서 붙여 넣어야 한다. 
   
-    uint32_t size = file_header -> bfOffBits;
-    distance = sizeof(size);
+    uint32_t size = file_header->bfOffBits;
+
+    // 사이즈만큼 파일 포인터를 이동시킨다. 
+    distance = size;
     fseek(fp, distance, SEEK_SET);
     fseek(gray_fp, distance, SEEK_SET);
 
@@ -212,11 +225,40 @@ int gray_scale(FILE *fp, BITMAPFILEHEADER *file_header, BITMAPINFOHEADER *file_i
 
     // 픽셀데이터를 읽고 변환하고 쓰는 과정을
     // 반복해 나간다. 
-    for(long i = 0; i < pix_num; i++){
-        fread(buff[3], 3, 1, fp);  
-        fwrite(buff[3], 3, 1, gray_fp);
+    // 스트리밍 방법으로할 것이기 때문에 동적 할당은 안해도 된다. 
+    for(long i = 0; i < pixnum; i++){
+
+        // fread는 저절로 파일 포인터의 위치를 바꾸어 준다.
+        if((fread(pix_buff, 3, 1, fp)) != 1){
+                perror("Read data failed\n");
+                fclose(fp);
+                fclose(gray_fp);
+                return 1;
+        }
+
+        // 그레이 스케일로 바꾸어야 한다. 
+        unsigned char B = pix_buff[0];
+        unsigned char G = pix_buff[1];
+        unsigned char R = pix_buff[2];
+
+        unsigned char Y = (unsigned char)(0.299 * R + 0.587 * G + 0.114 * B);
+
+        pix_buff[0] = Y; // Blue
+        pix_buff[1] = Y; // Green
+        pix_buff[2] = Y; // Red
+
+
+        if ((i + 1) % pixels_per_row == 0) {
+
+                for (int p = 0; p < padding; p++) {
+                    fwrite(&zero_byte, sizeof(unsigned char), 1, gray_fp);
+               }
+        }
+
+        fwrite(pix_buff, 3, 1, gray_fp);
     }
     
+    printf("GRAY SCALE COMPLETED!\n");
     fclose(gray_fp);
     return 0;
 }
